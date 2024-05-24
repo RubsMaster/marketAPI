@@ -28,17 +28,44 @@ export const registerUser = [
       res.status(201).json({ message: 'Usuario registrado con éxito', user: newUser });
     } catch (error) {
       console.log(error)
-      res.status(500).json({ error: 'Error en el servidor' });
+      res.status(500).json({ error: 'Error en el servidor, revise la consola para mas información.' });
     }
   }
 ];
 
 export const login = async (req, res) => {
-  const { username, pass } = req.body;
+  const { username, password } = req.body;
+  console.log(username)
+  console.log(password)
+  if (!username || !password) {
+    return res.status(200).json({ error: "No se enviaron credenciales"})
+  }
 
   try {
     const user = await UserModel.findOne({ where: { username } });
-    console.log(user)
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Credenciales incorrectas PPP' });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+
+    res.json({ token });
+  } catch (error) {
+    console.log("Error de try: " + error)
+    res.status(500).json({ error: 'Error en e' });
+  }
+};
+export const logout = async (req, res) => {
+  const { username} = req.body;
+
+  try {
+    const user = await UserModel.findOne({ where: { username } });
     if (!user) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
@@ -49,7 +76,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas PPP' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, role: user.role }, 'elbubuesculo', { expiresIn: '1h' });
 
     res.json({ token });
   } catch (error) {
